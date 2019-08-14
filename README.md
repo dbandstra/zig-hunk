@@ -18,14 +18,14 @@ You call `getMark`, then allocate some memory using the allocator API, then when
 Example:
 
 ```zig
-var low = hunk.low();
+var side = hunk.low(); // or hunk.high()
 
-const mark = low.getMark();
-defer low.freeToMark();
+const mark = side.getMark();
+defer side.freeToMark();
 
-var memory = try low.allocator.alloc(u8, 123);
-var memory2 = try low.allocator.alloc(u8, 456);
-var memory3 = try std.mem.dupe(&low.allocator, u8, "hello");
+var memory = try side.allocator.alloc(u8, 123);
+var memory2 = try side.allocator.alloc(u8, 456);
+var memory3 = try std.mem.dupe(&side.allocator, u8, "hello");
 ```
 
 The two sides can be used independently. You could for example use one side for more persistent allocations, and the other side for temporary allocations.
