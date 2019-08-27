@@ -138,7 +138,7 @@ pub const Hunk = struct{
         std.debug.assert(pos <= self.low_used);
         if (pos < self.low_used) {
             if (builtin.mode == builtin.Mode.Debug) {
-                std.mem.set(u8, self.buffer[pos..pos + self.low_used], 0xcc);
+                std.mem.set(u8, self.buffer[pos..self.low_used], 0xcc);
             }
             self.low_used = pos;
         }
