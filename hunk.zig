@@ -167,18 +167,18 @@ test "Hunk" {
     _ = try hunk.low().allocator.alloc(u8, 7);
     _ = try hunk.high().allocator.alloc(u8, 8);
 
-    std.testing.expectEqual(usize(7), hunk.low_used);
-    std.testing.expectEqual(usize(8), hunk.high_used);
+    std.testing.expectEqual(@as(usize, 7), hunk.low_used);
+    std.testing.expectEqual(@as(usize, 8), hunk.high_used);
 
     _ = try hunk.high().allocator.alloc(u8, 8);
 
-    std.testing.expectEqual(usize(16), hunk.high_used);
+    std.testing.expectEqual(@as(usize, 16), hunk.high_used);
 
     const low_mark = hunk.getLowMark();
 
     _ = try hunk.low().allocator.alloc(u8, 100 - 7 - 16);
 
-    std.testing.expectEqual(usize(100 - 16), hunk.low_used);
+    std.testing.expectEqual(@as(usize, 100 - 16), hunk.low_used);
 
     std.testing.expectError(error.OutOfMemory, hunk.high().allocator.alloc(u8, 1));
 
@@ -188,5 +188,5 @@ test "Hunk" {
 
     hunk.freeToHighMark(high_mark);
 
-    std.testing.expectEqual(usize(0), hunk.high_used);
+    std.testing.expectEqual(@as(usize, 0), hunk.high_used);
 }
