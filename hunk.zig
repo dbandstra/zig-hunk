@@ -31,20 +31,20 @@ pub const HunkSide = struct {
         self.vtable.freeToMark(self.hunk, pos);
     }
 
-    fn allocFn(allocator: *std.mem.Allocator, len: usize, ptr_align: u29, len_align: u29) std.mem.Allocator.Error![]u8 {
+    fn allocFn(allocator: *std.mem.Allocator, len: usize, ptr_align: u29, len_align: u29, ret_addr: usize) std.mem.Allocator.Error![]u8 {
         const self = @fieldParentPtr(HunkSide, "allocator", allocator);
 
         return try self.vtable.alloc(self.hunk, len, ptr_align);
     }
 
-    fn resizeFn(allocator: *std.mem.Allocator, buf: []u8, new_len: usize, len_align: u29) std.mem.Allocator.Error!usize {
-        if (new_len > buf.len) {
+    fn resizeFn(allocator: *std.mem.Allocator, old_mem: []u8, old_align: u29, new_size: usize, len_align: u29, ret_addr: usize) std.mem.Allocator.Error!usize {
+        if (new_size > old_mem.len) {
             return error.OutOfMemory;
         }
-        if (new_len == 0) {
+        if (new_size == 0) {
             return 0;
         }
-        return std.mem.alignAllocLen(buf.len, new_len, len_align);
+        return std.mem.alignAllocLen(old_mem.len, new_size, len_align);
     }
 };
 
