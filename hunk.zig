@@ -1,8 +1,8 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
-pub const HunkSide = struct{
-    pub const VTable = struct{
+pub const HunkSide = struct {
+    pub const VTable = struct {
         alloc: fn (self: *Hunk, n: usize, alignment: u29) std.mem.Allocator.Error![]u8,
         getMark: fn (self: *Hunk) usize,
         freeToMark: fn (self: *Hunk, pos: usize) void,
@@ -13,12 +13,12 @@ pub const HunkSide = struct{
     allocator: std.mem.Allocator,
 
     pub fn init(hunk: *Hunk, vtable: *const VTable) HunkSide {
-        return HunkSide{
+        return .{
             .hunk = hunk,
             .vtable = vtable,
-            .allocator = std.mem.Allocator{
-                .reallocFn = reallocFn,
-                .shrinkFn = shrinkFn,
+            .allocator = .{
+                .allocFn = allocFn,
+                .resizeFn = resizeFn,
             },
         };
     }
@@ -31,46 +31,30 @@ pub const HunkSide = struct{
         self.vtable.freeToMark(self.hunk, pos);
     }
 
-    fn reallocFn(
-        allocator: *std.mem.Allocator,
-        old_mem: []u8,
-        old_align: u29,
-        new_byte_count: usize,
-        alignment: u29,
-    ) std.mem.Allocator.Error![]u8 {
+    fn allocFn(allocator: *std.mem.Allocator, len: usize, ptr_align: u29, len_align: u29, ret_addr: usize) std.mem.Allocator.Error![]u8 {
         const self = @fieldParentPtr(HunkSide, "allocator", allocator);
 
-        if (new_byte_count <= old_mem.len and alignment <= old_align) {
-            // reuse existing allocation block (or "free", if new_byte_count is 0)
-            return old_mem[0..new_byte_count];
-        } else {
-            // create a new allocation (old alloc is leaked, because there is no way
-            // to actually free individual allocations in the hunk system)
-            const result = try self.vtable.alloc(self.hunk, new_byte_count, alignment);
-            std.mem.copy(u8, result, old_mem);
-            return result;
-        }
+        return try self.vtable.alloc(self.hunk, len, ptr_align);
     }
 
-    fn shrinkFn(
-        allocator: *std.mem.Allocator,
-        old_mem: []u8,
-        old_align: u29,
-        new_byte_count: usize,
-        alignment: u29
-    ) []u8 {
-        // note: alignment is guaranteed to be <= the old alignment
-        return old_mem[0..new_byte_count];
+    fn resizeFn(allocator: *std.mem.Allocator, old_mem: []u8, old_align: u29, new_size: usize, len_align: u29, ret_addr: usize) std.mem.Allocator.Error!usize {
+        if (new_size > old_mem.len) {
+            return error.OutOfMemory;
+        }
+        if (new_size == 0) {
+            return 0;
+        }
+        return std.mem.alignAllocLen(old_mem.len, new_size, len_align);
     }
 };
 
-pub const Hunk = struct{
+pub const Hunk = struct {
     low_used: usize,
     high_used: usize,
     buffer: []u8,
 
     pub fn init(buffer: []u8) Hunk {
-        return Hunk{
+        return .{
             .low_used = 0,
             .high_used = 0,
             .buffer = buffer,
@@ -78,8 +62,8 @@ pub const Hunk = struct{
     }
 
     pub fn low(self: *Hunk) HunkSide {
-        const GlobalStorage = struct{
-            const vtable = HunkSide.VTable{
+        const GlobalStorage = struct {
+            const vtable: HunkSide.VTable = .{
                 .alloc = allocLow,
                 .getMark = getLowMark,
                 .freeToMark = freeToLowMark,
@@ -89,8 +73,8 @@ pub const Hunk = struct{
     }
 
     pub fn high(self: *Hunk) HunkSide {
-        const GlobalStorage = struct{
-            const vtable = HunkSide.VTable{
+        const GlobalStorage = struct {
+            const vtable: HunkSide.VTable = .{
                 .alloc = allocHigh,
                 .getMark = getHighMark,
                 .freeToMark = freeToHighMark,
@@ -121,7 +105,7 @@ pub const Hunk = struct{
             return error.OutOfMemory;
         }
         const start = self.buffer.len - adjusted_index - n;
-        const result = self.buffer[start..start + n];
+        const result = self.buffer[start .. start + n];
         self.high_used = new_high_used;
         return result;
     }
@@ -150,7 +134,7 @@ pub const Hunk = struct{
             if (builtin.mode == builtin.Mode.Debug) {
                 const i = self.buffer.len - self.high_used;
                 const n = self.high_used - pos;
-                std.mem.set(u8, self.buffer[i..i + n], 0xcc);
+                std.mem.set(u8, self.buffer[i .. i + n], 0xcc);
             }
             self.high_used = pos;
         }
