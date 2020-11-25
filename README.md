@@ -1,6 +1,8 @@
 # zig-hunk
 A basic "Hunk" memory allocator, based on (and name taken from) the hunk system from id Software's Quake engine. A more descriptive name might be "double-sided stack allocator based on a fixed block of memory".
 
+Requires Zig 0.7.0.
+
 ## Usage
 A new `Hunk` must be provided with an array of bytes. This block of memory is all there is - hunk allocators will return "out of memory" errors when the block is full.
 
