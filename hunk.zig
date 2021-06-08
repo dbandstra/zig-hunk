@@ -1,4 +1,3 @@
-const builtin = @import("builtin");
 const std = @import("std");
 
 pub const HunkSide = struct {
@@ -121,7 +120,7 @@ pub const Hunk = struct {
     pub fn freeToLowMark(self: *Hunk, pos: usize) void {
         std.debug.assert(pos <= self.low_used);
         if (pos < self.low_used) {
-            if (builtin.mode == builtin.Mode.Debug) {
+            if (std.builtin.mode == std.builtin.Mode.Debug) {
                 std.mem.set(u8, self.buffer[pos..self.low_used], 0xcc);
             }
             self.low_used = pos;
@@ -131,7 +130,7 @@ pub const Hunk = struct {
     pub fn freeToHighMark(self: *Hunk, pos: usize) void {
         std.debug.assert(pos <= self.high_used);
         if (pos < self.high_used) {
-            if (builtin.mode == builtin.Mode.Debug) {
+            if (std.builtin.mode == std.builtin.Mode.Debug) {
                 const i = self.buffer.len - self.high_used;
                 const n = self.high_used - pos;
                 std.mem.set(u8, self.buffer[i .. i + n], 0xcc);
@@ -151,20 +150,20 @@ test "Hunk" {
     _ = try hunk.low().allocator.alloc(u8, 7);
     _ = try hunk.high().allocator.alloc(u8, 8);
 
-    std.testing.expectEqual(@as(usize, 7), hunk.low_used);
-    std.testing.expectEqual(@as(usize, 8), hunk.high_used);
+    try std.testing.expectEqual(@as(usize, 7), hunk.low_used);
+    try std.testing.expectEqual(@as(usize, 8), hunk.high_used);
 
     _ = try hunk.high().allocator.alloc(u8, 8);
 
-    std.testing.expectEqual(@as(usize, 16), hunk.high_used);
+    try std.testing.expectEqual(@as(usize, 16), hunk.high_used);
 
     const low_mark = hunk.getLowMark();
 
     _ = try hunk.low().allocator.alloc(u8, 100 - 7 - 16);
 
-    std.testing.expectEqual(@as(usize, 100 - 16), hunk.low_used);
+    try std.testing.expectEqual(@as(usize, 100 - 16), hunk.low_used);
 
-    std.testing.expectError(error.OutOfMemory, hunk.high().allocator.alloc(u8, 1));
+    try std.testing.expectError(error.OutOfMemory, hunk.high().allocator.alloc(u8, 1));
 
     hunk.freeToLowMark(low_mark);
 
@@ -172,5 +171,5 @@ test "Hunk" {
 
     hunk.freeToHighMark(high_mark);
 
-    std.testing.expectEqual(@as(usize, 0), hunk.high_used);
+    try std.testing.expectEqual(@as(usize, 0), hunk.high_used);
 }
