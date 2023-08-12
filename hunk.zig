@@ -17,16 +17,16 @@ pub const HunkSide = struct {
         .free = &freeFn,
     };
 
-    pub fn init(hunk: *Hunk, vtable: *const VTable) HunkSide {
+    fn init(hunk: *Hunk, vtable: *const VTable) HunkSide {
         return .{
             .hunk = hunk,
             .vtable = vtable,
         };
     }
 
-    pub fn allocator(self: *HunkSide) std.mem.Allocator {
+    pub fn allocator(self: *const HunkSide) std.mem.Allocator {
         return .{
-            .ptr = self,
+            .ptr = @constCast(self),
             .vtable = &allocator_vtable,
         };
     }
@@ -41,7 +41,7 @@ pub const HunkSide = struct {
 
     fn allocFn(ctx: *anyopaque, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
         _ = ret_addr;
-        const self: *HunkSide = @ptrCast(@alignCast(ctx));
+        const self: *const HunkSide = @ptrCast(@alignCast(ctx));
         return self.vtable.alloc(self.hunk, len, ptr_align);
     }
 
