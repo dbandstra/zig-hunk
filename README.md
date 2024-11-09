@@ -4,7 +4,7 @@ A basic "Hunk" memory allocator, based on (and name taken from) the hunk
 system from id Software's Quake engine. A more descriptive name might be
 "double-sided stack allocator based on a fixed block of memory".
 
-Requires Zig 0.11.0.
+Tested to work with Zig 0.11.0, 0.12.1 and 0.13.0.
 
 ## Usage
 
